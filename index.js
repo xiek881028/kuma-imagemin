@@ -16,16 +16,16 @@ const pngquantFile = fs.readFileSync(path.join(__dirname, 'lib/pngquant.js'), {
 /**
  * png压缩方法
  *
- * @param {string} path 需要压缩的图片地址
+ * @param {string} dir 需要压缩的图片地址
  * @return {Object} 返回一个包含压缩数据及压缩率的对象
  * @param {Uint8Array} data 压缩后的图片数据
  * @param {Number} ratio 压缩率
  */
-exports.minPng = path => {
+exports.minPng = dir => {
   return eval(`${pngquantFile};
     (() => {
       const fs = require('fs-extra');
-      const data = fs.readFileSync('${path}');
+      const data = fs.readFileSync('${dir}');
       const res = pngquant(data, {}, () => {}).data;
       return {
         data: res,
@@ -38,15 +38,15 @@ exports.minPng = path => {
 /**
  * jpg压缩方法
  *
- * @param {string} path 需要压缩的图片地址
+ * @param {string} dir 需要压缩的图片地址
  * @param {string} outPath 图片输出地址
  * @param {Object} option pngquant参数
  * @return {Object} 返回一个包含压缩数据及压缩率的对象
  * @param {Uint8Array} data 压缩后的图片数据
  * @param {Number} ratio 压缩率
  */
-exports.minJpg = (path, args = {}) => {
-  const data = fs.readFileSync(path);
+exports.minJpg = (dir, args = {}) => {
+  const data = fs.readFileSync(dir);
   const res = mozjpeg(data, { quality: 100, ...args }).data;
   return {
     data: res,
@@ -54,6 +54,11 @@ exports.minJpg = (path, args = {}) => {
   };
 };
 
+/**
+ * 压缩指定文件夹
+ *
+ * @param {string} dir 需要压缩的文件夹路径
+ */
 exports.minDir = async dir => {
   const fileObj = file(dir, {
     loop: true,
