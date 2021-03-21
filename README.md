@@ -19,8 +19,10 @@ npm install kuma-imagemin
 ```javascript
 const { minPng, minJpg } = require('kuma-imagemin');
 
-// 压缩png（压缩算法有bug，暂时无法传参）
-const pngRes = minPng('test.png');
+// 压缩png
+const pngRes = minPng('test.png', {
+  quality: '60-80',
+});
 // 压缩后的png数据，格式为 Uint8Array
 console.log(pngRes.data);
 // 压缩率
@@ -38,10 +40,6 @@ console.log(jpgRes.ratio);
 // 压缩指定文件夹
 minDir('img')
 ```
-
-## Bug
-
-- 已知`pngquant`核心算法存在无法传参的问题
 
 ## License
 
