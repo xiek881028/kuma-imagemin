@@ -17,10 +17,11 @@ npm install kuma-imagemin
 ## Usage
 
 ```javascript
-const { minPng, minJpg } = require('kuma-imagemin');
+const fs = require('fs-extra');
+const { minPng, minJpg, minDir, clearOrigin, clearLog } = require('kuma-imagemin');
 
 // 压缩png
-const pngRes = minPng('test.png', {
+const pngRes = minPng(fs.readFileSync('test.png'), {
   quality: '60-80',
 });
 // 压缩后的png数据，格式为 Uint8Array
@@ -29,7 +30,7 @@ console.log(pngRes.data);
 console.log(pngRes.ratio);
 
 // 压缩jpg
-const jpgRes = minJpg('test.png', {
+const jpgRes = minJpg(fs.readFileSync('test.png'), {
   quality: 0.6,
 });
 // 压缩后的jpg数据，格式为 Uint8Array
@@ -38,7 +39,18 @@ console.log(jpgRes.data);
 console.log(jpgRes.ratio);
 
 // 压缩指定文件夹
-minDir('img')
+minDir('img', {
+  // 是否生成备份源文件
+  backup: true,
+  // 是否强制压缩文件
+  force: false,
+});
+
+// 删除指定文件夹内的备份源文件
+clearOrigin('img');
+
+// 删除插件压缩日志（记录所有被压缩过文件的md5，删除后所有文件都当成未被压缩）
+clearLog();
 ```
 
 ## License
