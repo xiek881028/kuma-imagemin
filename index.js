@@ -8,7 +8,7 @@ const path = require('path');
 const sizeOf = require('image-size');
 const file = require('kuma-helpers/node/file');
 const { encode: mozjpeg } = require('./lib/mozjpeg');
-const pngquant = require('./lib/dist.min');
+const pngquant = require('./lib/pngquant');
 
 /**
  * png压缩方法

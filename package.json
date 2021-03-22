@@ -1,6 +1,6 @@
 {
   "name": "kuma-imagemin",
-  "version": "0.2.0",
+  "version": "0.2.1",
   "description": "一个整合了mozjpeg和pngquant的图片压缩工具",
   "author": "xiek <285985285@qq.com>",
   "keywords": [
