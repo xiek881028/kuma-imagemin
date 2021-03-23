@@ -1,22 +1,33 @@
 {
   "name": "kuma-imagemin",
-  "version": "0.3.1",
+  "version": "0.4.0",
   "description": "一个整合了mozjpeg和pngquant的图片压缩工具",
   "author": "xiek <285985285@qq.com>",
   "keywords": [
     "kuma",
     "imagemin"
   ],
+  "bin": {
+    "kuma-imagemin": "bin/kuma-imagemin.js"
+  },
   "dependencies": {
+    "chalk": "^4.1.0",
+    "commander": "^7.2.0",
     "file-type": "^16.3.0",
     "fs-extra": "^9.1.0",
     "image-size": "^0.9.7",
     "kuma-helpers": "^1.0.0",
-    "md5": "^2.3.0"
+    "leven": "^3.1.0",
+    "md5": "^2.3.0",
+    "semver": "^7.3.5"
   },
   "license": "GPL v3",
   "files": [
     "index.js",
-    "lib"
-  ]
+    "lib",
+    "bin"
+  ],
+  "engines": {
+    "node": ">= 14.15.0"
+  }
 }
