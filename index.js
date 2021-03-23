@@ -34,10 +34,21 @@ const readLog = () => {
  * @param {Number} ratio 压缩率
  */
 exports.minPng = (data, args = {}) => {
-  const res = pngquant(data, args, () => {}).data;
+  const { quality, ...other } = args;
+  // 抹平不同压缩算法处理quality的差异，因为png有损，会压缩失败，间隔调整为10减少失败概率
+  let _quality;
+  if (quality - 1 <= 0) {
+    _quality = `0-10`;
+  } else if (quality >= 100) {
+    _quality = undefined;
+  } else {
+    _quality = `${quality - 10}-${quality}`;
+  }
+  const res = pngquant(data, { quality: _quality, ...other }, () => {}).data;
   return {
     data: res,
-    ratio: res.length / data.length,
+    flag: res !== undefined,
+    ratio: res?.length ?? 0 / data.length,
   };
 };
 
@@ -55,6 +66,8 @@ exports.minJpg = (data, args = {}) => {
   const res = mozjpeg(data, { quality: 100, ...args }).data;
   return {
     data: res,
+    // jpg压缩失败也会返回data，所以一定成功
+    flag: true,
     ratio: res.length / data.length,
   };
 };
@@ -99,11 +112,13 @@ exports.isMin = dir => {
  * @param {Boolean} force 是否强制压缩文件
  */
 exports.minDir = async (dir, ops = {}) => {
-  const { backup, force } = {
+  const { backup, force, quality } = {
     // 默认生成origin文件，保留源文件
     backup: true,
     // 记录文件缓存，有缓存则不压缩
     force: false,
+    // 压缩质量，默认最高
+    quality: 100,
     ...ops,
   };
   const fileObj = file(dir, {
@@ -117,7 +132,14 @@ exports.minDir = async (dir, ops = {}) => {
     if (/(kuma_origin)$/.test(path.parse(el).name)) {
       continue;
     }
-    const { height, width, type } = await sizeOf(el);
+    let info = {};
+    try {
+      info = await sizeOf(el);
+    } catch (error) {
+      // 不能识别的类型，跳过
+      continue;
+    }
+    const { height, width, type } = info;
     let fn;
     if (type === 'png') {
       fn = this.minPng;
@@ -132,9 +154,16 @@ exports.minDir = async (dir, ops = {}) => {
       // 对比md5，判断图片是否已经被压缩，如果开启force，则一定压缩
       const isMin = this.isMin(el);
       if (force || !isMin) {
-        const { data, ratio } = fn(buffer);
+        const { data, ratio, flag } = fn(buffer, { quality: isNaN(+quality) ? 100 : +quality });
+        if (!flag) {
+          console.log(`${imgPath}压缩报错，放弃压缩`);
+          continue;
+        }
         const ext = path.extname(el);
-        const newDir = path.dirname(el) + path.basename(el).replace(ext, `.kuma_origin${ext}`);
+        const newDir = path.join(
+          path.dirname(el),
+          path.basename(el).replace(ext, `.kuma_origin${ext}`)
+        );
         console.log(`压缩${imgPath}...`);
         if (ratio < 1) {
           // 如果有原始文件，则删除

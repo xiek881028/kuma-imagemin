@@ -8,17 +8,40 @@
 >
 > png 压缩方法基于[pngquantjs](https://github.com/psych0der/pngquantjs)
 
-## Install
+## 安装
 
 ```bash
 npm install kuma-imagemin
 ```
 
-## Usage
+## 使用
+
+### 命令行调用
+
+```bash
+# 压缩文件
+npx kuma-imagemin min <文件（夹）路径>
+
+# 查看帮助
+# 更多操作请自行看帮助信息
+npx kuma-imagemin -h
+
+```
+
+### 方法调用
 
 ```javascript
 const fs = require('fs-extra');
-const { minPng, minJpg, minDir, clearOrigin, clearLog } = require('kuma-imagemin');
+const {
+  minPng,
+  minJpg,
+  minDir,
+  clearOrigin,
+  clearLog,
+  log,
+  isMin,
+  resetByOrigin,
+} = require('kuma-imagemin');
 
 // 压缩png
 const pngRes = minPng(fs.readFileSync('test.png'), {
@@ -51,6 +74,17 @@ clearOrigin('img');
 
 // 删除插件压缩日志（记录所有被压缩过文件的md5，删除后所有文件都当成未被压缩）
 clearLog();
+
+// 添加压缩日志记录
+log({
+  'img/test.png': '38d034676322c1c6350190ccfc3eca58' // md5
+});
+
+// 判断一个文件是否已经被压缩（依赖日志记录）
+isMin('img/test.png');
+
+// 用备份源文件还原压缩后的文件（需要在压缩时保留备份源文件）
+resetByOrigin('img');
 ```
 
 ## License

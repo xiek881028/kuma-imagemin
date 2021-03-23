@@ -7,7 +7,6 @@
 
 const chalk = require('chalk');
 const path = require('path');
-const fs = require('fs');
 const semver = require('semver');
 const leven = require('leven');
 const { minDir, clearOrigin, clearLog, resetByOrigin } = require('../index');
@@ -17,16 +16,12 @@ class Cli {
   constructor(ops = {}) {
     const { needNodeVersion, packageName } = ops;
     this.checkNodeVersion(needNodeVersion ?? pkg.engines.node, packageName ?? pkg.name);
-
     this.bin = this.binName();
-
     const program = require('commander');
 
     const suggestCommands = unknownCommand => {
       const availableCommands = program.commands.map(cmd => cmd._name);
-
       let suggestion;
-
       availableCommands.forEach(cmd => {
         // 错误命令与标准命令最小路径 < 错误命令与空命令的最小路径
         const isBestMatch = leven(cmd, unknownCommand) < leven(suggestion || '', unknownCommand);
