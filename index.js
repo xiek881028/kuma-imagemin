@@ -48,7 +48,7 @@ exports.minPng = (data, args = {}) => {
   return {
     data: res,
     flag: res !== undefined,
-    ratio: res?.length ?? 0 / data.length,
+    ratio: (res?.length ?? 0) / data.length,
   };
 };
 
