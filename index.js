@@ -7,12 +7,19 @@ const fs = require('fs-extra');
 const path = require('path');
 const sizeOf = require('image-size');
 const md5 = require('md5');
+const pkgDir = require('pkg-dir');
 const file = require('kuma-helpers/node/file');
+const pkg = require('./package.json');
 const { encode: mozjpeg } = require('./lib/mozjpeg');
 const pngquant = require('./lib/pngquant');
+// 以shell运行路径向上寻找最近的package.json作为工作根路径
+const workDir = pkgDir.sync(process.cwd());
+const updateNotifier = require('update-notifier');
+
+updateNotifier({ pkg }).notify();
 
 const readLog = () => {
-  const logPath = path.join(__dirname, '_log.json');
+  const logPath = path.join(workDir, 'kuma-imagemin-log.json');
   if (!fs.existsSync(logPath)) {
     fs.writeJsonSync(
       logPath,
@@ -81,7 +88,7 @@ exports.minJpg = (data, args = {}) => {
  */
 exports.log = (data = {}) => {
   const log = readLog();
-  const logPath = path.join(__dirname, '_log.json');
+  const logPath = path.join(workDir, 'kuma-imagemin-log.json');
   fs.writeJsonSync(
     logPath,
     { ...log, ...data },
@@ -147,7 +154,7 @@ exports.minDir = async (dir, ops = {}) => {
       fn = this.minJpg;
     }
     if (fn) {
-      const log = {};
+      const logs = {};
       const buffer = fs.readFileSync(el);
       // 如果传入的路径是文件路径，相对后会为空，这时直接使用文件路径作为key
       const imgPath = path.relative(path.join(dir), el) || el;
@@ -172,12 +179,12 @@ exports.minDir = async (dir, ops = {}) => {
           backup && fs.copySync(el, newDir);
           fs.writeFileSync(el, data);
           console.log(`压缩率${(100 - ratio * 100).toFixed(2)}%`);
-          log[el] = md5(data);
+          logs[el] = md5(data);
         } else {
           console.log(`压缩率小于0，放弃压缩`);
-          log[el] = md5(buffer);
+          logs[el] = md5(buffer);
         }
-        this.log(log);
+        log(logs);
       } else if (isMin) {
         console.log(`${imgPath}已被压缩，忽略`);
       }
@@ -225,5 +232,5 @@ exports.resetByOrigin = async dir => {
  * 清除日志记录文件
  */
 exports.clearLog = async () => {
-  fs.removeSync(path.join(__dirname, '_log.json'));
+  fs.removeSync(path.join(workDir, 'kuma-imagemin-log.json'));
 };
