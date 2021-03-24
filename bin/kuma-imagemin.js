@@ -5,17 +5,35 @@
  * @author xiek(285985285@qq.com)
  */
 
+const pkg = require('../package.json');
+const semver = require('semver');
 const chalk = require('chalk');
 const path = require('path');
-const semver = require('semver');
 const leven = require('leven');
+// node版本检测
+const checkNodeVersion = (wanted, id) => {
+  if (!semver.satisfies(process.version, wanted, { includePrerelease: true })) {
+    console.log(
+      chalk.red(
+        '您使用的Node版本为 ' +
+          process.version +
+          ', 但 ' +
+          id +
+          ' 需要使用Node版本为 ' +
+          wanted +
+          '。\n请升级您的Node版本。'
+      )
+    );
+    process.exit(1);
+  }
+};
+// 放在开头运行，避免后续使用es7新语法报错（为啥不过babel？因为懒。。。）
+checkNodeVersion(pkg.engines.node, pkg.name);
+
 const { minDir, clearOrigin, clearLog, resetByOrigin } = require('../index');
-const pkg = require('../package.json');
 
 class Cli {
   constructor(ops = {}) {
-    const { needNodeVersion, packageName } = ops;
-    this.checkNodeVersion(needNodeVersion ?? pkg.engines.node, packageName ?? pkg.name);
     this.bin = this.binName();
     const program = require('commander');
 
@@ -105,24 +123,6 @@ class Cli {
   binName() {
     const scriptPath = process.argv[1];
     return this.bin || (scriptPath && path.basename(scriptPath, path.extname(scriptPath)));
-  }
-
-  // node版本检测
-  checkNodeVersion(wanted, id) {
-    if (!semver.satisfies(process.version, wanted, { includePrerelease: true })) {
-      console.log(
-        chalk.red(
-          '您使用的Node版本为 ' +
-            process.version +
-            ', 但插件包 ' +
-            id +
-            ' 需要使用Node版本为 ' +
-            wanted +
-            '。\n请升级您的Node版本。'
-        )
-      );
-      process.exit(1);
-    }
   }
 
   run() {
