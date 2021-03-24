@@ -80,7 +80,7 @@ class Cli {
       .description('清除源文件（需要在压缩时备份源文件）')
       .action(async (name, ops) => {
         await clearOrigin(name);
-        console.log('源文件覆盖完成');
+        console.log('源文件清除完成');
       });
 
     program
