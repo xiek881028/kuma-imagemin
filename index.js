@@ -184,7 +184,7 @@ exports.minDir = async (dir, ops = {}) => {
           console.log(`压缩率小于0，放弃压缩`);
           logs[el] = md5(buffer);
         }
-        log(logs);
+        this.log(logs);
       } else if (isMin) {
         console.log(`${imgPath}已被压缩，忽略`);
       }
