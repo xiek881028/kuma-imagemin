@@ -91,7 +91,11 @@ class Cli {
         console.log(chalk.white(`总压缩大小：${prettyBytes(count.nextLen)}`));
         console.log(chalk.white(`最佳压缩率：${count.best}%`));
         console.log(
-          chalk.white(`平均压缩率：${(100 - (count.nextLen * 100) / count.preLen).toFixed(2)}%`)
+          chalk.white(
+            `平均压缩率：${
+              count.preLen ? (100 - (count.nextLen * 100) / count.preLen).toFixed(2) : 0
+            }%`
+          )
         );
         console.log(chalk.white(`最大的文件：${prettyBytes(count.max)}`));
         console.log(chalk.white(`最小的文件：${prettyBytes(count.min)}`));

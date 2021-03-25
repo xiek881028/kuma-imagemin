@@ -9,11 +9,12 @@ const sizeOf = require('image-size');
 const md5 = require('md5');
 const pkgDir = require('pkg-dir');
 const file = require('kuma-helpers/node/file');
+const envPaths = require('env-paths');
 const pkg = require('./package.json');
 const { encode: mozjpeg } = require('./lib/mozjpeg');
 const pngquant = require('./lib/pngquant');
-// 以shell运行路径向上寻找最近的package.json作为工作根路径
-const workDir = pkgDir.sync(process.cwd());
+// 以shell运行路径向上寻找最近的package.json作为工作根路径。否则使用系统env地址作为数据存储地
+const workDir = pkgDir.sync(process.cwd()) || envPaths('kuma-imagemin', { suffix: '' }).data;
 const updateNotifier = require('update-notifier');
 
 updateNotifier({ pkg }).notify();
@@ -26,6 +27,7 @@ updateNotifier({ pkg }).notify();
 exports.readLog = () => {
   const logPath = path.join(workDir, 'kuma-imagemin.log');
   if (!fs.existsSync(logPath)) {
+    fs.ensureDirSync(workDir);
     fs.writeJsonSync(
       logPath,
       {
