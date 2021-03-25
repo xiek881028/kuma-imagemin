@@ -10,6 +10,8 @@ const semver = require('semver');
 const chalk = require('chalk');
 const path = require('path');
 const leven = require('leven');
+const figlet = require('figlet');
+const prettyBytes = require('pretty-bytes');
 // node版本检测
 const checkNodeVersion = (wanted, id) => {
   if (!semver.satisfies(process.version, wanted, { includePrerelease: true })) {
@@ -30,7 +32,7 @@ const checkNodeVersion = (wanted, id) => {
 // 放在开头运行，避免后续使用es7新语法报错（为啥不过babel？因为懒。。。）
 checkNodeVersion(pkg.engines.node, pkg.name);
 
-const { minDir, clearOrigin, clearLog, resetByOrigin } = require('../index');
+const { minDir, clearOrigin, clearLog, resetByOrigin, readLog } = require('../index');
 
 class Cli {
   constructor(ops = {}) {
@@ -53,6 +55,8 @@ class Cli {
       }
     };
 
+    program.addHelpText('beforeAll', figlet.textSync('kuma-imagemin'));
+
     program
       .version(`${pkg.name} ${pkg.version}`, '-v, --version', '查看版本')
       .helpOption('-h, --help', '获取帮助')
@@ -73,6 +77,24 @@ class Cli {
           force,
           quality,
         });
+      });
+
+    program
+      .command('count')
+      .description('查看压缩统计数据')
+      .action(async (name, ops) => {
+        const { count } = readLog();
+        console.log(chalk.green(`总压缩文件：${count.total}`));
+        console.log(chalk.yellow(`总忽略文件：${count.quit}`));
+        console.log(chalk.red(`总压缩失败：${count.error}`));
+        console.log(chalk.white(`总原始大小：${prettyBytes(count.preLen)}`));
+        console.log(chalk.white(`总压缩大小：${prettyBytes(count.nextLen)}`));
+        console.log(chalk.white(`最佳压缩率：${count.best}%`));
+        console.log(
+          chalk.white(`平均压缩率：${(100 - (count.nextLen * 100) / count.preLen).toFixed(2)}%`)
+        );
+        console.log(chalk.white(`最大的文件：${prettyBytes(count.max)}`));
+        console.log(chalk.white(`最小的文件：${prettyBytes(count.min)}`));
       });
 
     program

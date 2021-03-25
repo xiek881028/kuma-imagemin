@@ -18,12 +18,29 @@ const updateNotifier = require('update-notifier');
 
 updateNotifier({ pkg }).notify();
 
-const readLog = () => {
-  const logPath = path.join(workDir, 'kuma-imagemin-log.json');
+/**
+ * 读取日志
+ *
+ * @return {JSON} 返回一个包含md5列表和统计的对象
+ */
+exports.readLog = () => {
+  const logPath = path.join(workDir, 'kuma-imagemin.log');
   if (!fs.existsSync(logPath)) {
     fs.writeJsonSync(
       logPath,
-      {},
+      {
+        data: {},
+        count: {
+          max: 0,
+          min: 0,
+          total: 0,
+          preLen: 0,
+          nextLen: 0,
+          best: 0,
+          quit: 0,
+          error: 0,
+        },
+      },
       {
         spaces: 2,
       }
@@ -33,10 +50,11 @@ const readLog = () => {
 };
 
 /**
- * png压缩方法
+ * png压缩方法（纯粹的压缩方法，需要自己写入日志，添加统计信息）
  *
  * @param {String} data 需要压缩的图片
- * @return {Object} 返回一个包含压缩数据及压缩率的对象
+ * @param {JSON=} args 配置项
+ * @return {JSON} 返回一个包含压缩数据及压缩率的对象
  * @param {Uint8Array} data 压缩后的图片数据
  * @param {Number} ratio 压缩率
  */
@@ -60,12 +78,11 @@ exports.minPng = (data, args = {}) => {
 };
 
 /**
- * jpg压缩方法
+ * jpg压缩方法（纯粹的压缩方法，需要自己写入日志，添加统计信息）
  *
- * @param {String} data 需要压缩的图片
- * @param {String} outPath 图片输出地址
- * @param {Object} option pngquant参数
- * @return {Object} 返回一个包含压缩数据及压缩率的对象
+ * @param {String} data 需要压缩的图
+ * @param {JSON=} args pngquant参数
+ * @returns {JSON} 返回一个包含压缩数据及压缩率的对象
  * @param {Uint8Array} data 压缩后的图片数据
  * @param {Number} ratio 压缩率
  */
@@ -83,15 +100,17 @@ exports.minJpg = (data, args = {}) => {
  * 添加压缩日志
  *
  * @param {JSON} data 记录的日志对象
- * @param {String} data.key 图片路径
- * @param {String} data.val 图片md5
+ * @param {JSON} count 统计信息
  */
-exports.log = (data = {}) => {
-  const log = readLog();
-  const logPath = path.join(workDir, 'kuma-imagemin-log.json');
+exports.log = (data = {}, count) => {
+  const { data: list } = this.readLog();
+  const logPath = path.join(workDir, 'kuma-imagemin.log');
   fs.writeJsonSync(
     logPath,
-    { ...log, ...data },
+    {
+      data: { ...list, ...data },
+      count,
+    },
     {
       spaces: 2,
     }
@@ -105,16 +124,16 @@ exports.log = (data = {}) => {
  * @return {Boolean} 文件是否被压缩
  */
 exports.isMin = dir => {
-  const log = readLog();
+  const { data } = this.readLog();
   const buffer = fs.readFileSync(dir);
-  return log[dir] === md5(buffer);
+  return data[dir] === md5(buffer);
 };
 
 /**
  * 压缩指定文件夹
  *
  * @param {String} dir 需要压缩的文件夹路径
- * @param {Object} option pngquant参数
+ * @param {JSON} option pngquant参数
  * @param {Boolean} backup 是否生成备份文件
  * @param {Boolean} force 是否强制压缩文件
  */
@@ -154,7 +173,7 @@ exports.minDir = async (dir, ops = {}) => {
       fn = this.minJpg;
     }
     if (fn) {
-      const logs = {};
+      const { data: list, count } = this.readLog();
       const buffer = fs.readFileSync(el);
       // 如果传入的路径是文件路径，相对后会为空，这时直接使用文件路径作为key
       const imgPath = path.relative(path.join(dir), el) || el;
@@ -164,6 +183,9 @@ exports.minDir = async (dir, ops = {}) => {
         const { data, ratio, flag } = fn(buffer, { quality: isNaN(+quality) ? 100 : +quality });
         if (!flag) {
           console.log(`${imgPath}压缩报错，放弃压缩`);
+          // 记录压缩报错个数
+          count.error += 1;
+          this.log({}, count);
           continue;
         }
         const ext = path.extname(el);
@@ -178,13 +200,28 @@ exports.minDir = async (dir, ops = {}) => {
           // 如果需要备份，生成新的原始文件
           backup && fs.copySync(el, newDir);
           fs.writeFileSync(el, data);
-          console.log(`压缩率${(100 - ratio * 100).toFixed(2)}%`);
-          logs[el] = md5(data);
+          const dot = (100 - ratio * 100).toFixed(2);
+          console.log(`压缩率${dot}%`);
+          list[el] = md5(data);
+          // 合计压缩前大小
+          count.preLen += buffer.length;
+          // 合计压缩后大小
+          count.nextLen += data.length;
+          // 如果源文件大于最大值，记录
+          if (buffer.length > count.max) count.max = buffer.length;
+          // 如果源文件小于最小值，记录
+          if (count.min === 0 || buffer.length < count.min) count.min = buffer.length;
+          // 如果压缩率大于最佳值，记录
+          if (+dot > count.best) count.best = +dot;
+          // 压缩总数
+          count.total += 1;
         } else {
+          // 记录放弃压缩个数
           console.log(`压缩率小于0，放弃压缩`);
-          logs[el] = md5(buffer);
+          list[el] = md5(buffer);
+          count.quit += 1;
         }
-        this.log(logs);
+        this.log(list, count);
       } else if (isMin) {
         console.log(`${imgPath}已被压缩，忽略`);
       }
@@ -232,5 +269,5 @@ exports.resetByOrigin = async dir => {
  * 清除日志记录文件
  */
 exports.clearLog = async () => {
-  fs.removeSync(path.join(workDir, 'kuma-imagemin-log.json'));
+  fs.removeSync(path.join(workDir, 'kuma-imagemin.log'));
 };
