@@ -7,6 +7,7 @@ const fs = require('fs-extra');
 const path = require('path');
 const sizeOf = require('image-size');
 const md5 = require('md5');
+const slash = require('slash');
 const pkgDir = require('pkg-dir');
 const file = require('kuma-helpers/node/file');
 const envPaths = require('env-paths');
@@ -154,8 +155,8 @@ exports.minDir = async (dir, ops = {}) => {
   });
   const keys = Object.keys(fileObj);
   for (let i = 0; i < keys.length; i++) {
-    // 替换所有 \ 保证兼容
-    const el = fileObj[keys[i]].replace(/\\/g, '/');
+    // 替换所有 \ 保证不同系统的统一性
+    const el = slash(fileObj[keys[i]]);
     // 如果文件是备份文件则跳过
     if (/(kuma_origin)$/.test(path.parse(el).name)) {
       continue;

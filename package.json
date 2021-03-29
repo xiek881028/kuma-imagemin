@@ -1,6 +1,6 @@
 {
   "name": "kuma-imagemin",
-  "version": "0.5.1",
+  "version": "0.5.2",
   "description": "一个整合了mozjpeg和pngquant的图片压缩工具",
   "author": "xiek <285985285@qq.com>",
   "keywords": [
@@ -24,6 +24,7 @@
     "pkg-dir": "^5.0.0",
     "pretty-bytes": "^5.6.0",
     "semver": "^7.3.5",
+    "slash": "^3.0.0",
     "update-notifier": "^5.1.0"
   },
   "license": "GPL v3",
